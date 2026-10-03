@@ -1,0 +1,36 @@
+name: build‑jnidispatch‑ios‑arm64
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs‑on: macos‑14
+    steps:
+      ‑ name: checkout source
+        uses: actions/checkout@v4
+
+      ‑ name: download JNA 5.13.0 source zip
+        run: |
+          curl ‑L‑o jna‑src.zip https://github.com/java‑native‑access/jna/archive/refs/tags/5.13.0.zip
+          unzip ‑q jna‑src.zip
+          mv jna‑5.13.0 jna‑src
+
+      ‑ name: build libjnidispatch.dylib iOS arm64, inject JNA_JNI_VERSION=6.1.6
+        run: |
+          cd jna‑src/native
+          export JNA_JNI_VERSION="6.1.6"
+          xcrun ‑‑sdk iphoneos make \
+              CC="clang" \
+              ARCHS="arm64" \
+              SDKROOT=$(xcrun ‑‑sdk iphoneos ‑‑show‑sdk‑path) \
+              JNA_JNI_VERSION="${JNA_JNI_VERSION}" \
+              V=1
+          ls ‑la build‑iphoneos‑arm64
+
+      ‑ name: upload artifact libjnidispatch.dylib
+        uses: actions/upload‑artifact@v4
+        with:
+          name: libjnidispatch‑ios‑arm64‑6.1.6
+          path: jna‑src/native/build‑iphoneos‑arm64/libjnidispatch.dylib
